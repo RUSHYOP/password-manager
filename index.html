@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SecureVault - Password Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <svg
+              class="logo-icon"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="m7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <h1 class="logo-text">SecureVault</h1>
+          </div>
+          <p class="sidebar-subtitle">Your passwords, organized & secure</p>
+        </div>
+
+        <div class="sidebar-actions">
+          <button id="showGroupForm" class="btn btn-primary btn-full">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            New Group
+          </button>
+
+          <button id="loadGroupBtn" class="btn btn-secondary btn-full">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+              />
+            </svg>
+            Storage Folder
+          </button>
+        </div>
+
+        <!-- Groups List in Sidebar -->
+        <div class="sidebar-groups">
+          <h3 class="sidebar-groups-title">Groups</h3>
+          <div id="sidebarGroupsList" class="sidebar-groups-list">
+            <!-- Groups will be populated here -->
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="sidebar-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total Groups</span>
+            <span id="totalGroups" class="stat-value">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Passwords</span>
+            <span id="totalPasswords" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Header -->
+        <div class="main-header">
+          <div class="header-info">
+            <h2 id="currentView">All Groups</h2>
+            <p id="currentViewSubtitle">
+              Manage your password groups and entries
+            </p>
+          </div>
+          <div class="header-actions">
+            <div class="search-container">
+              <svg
+                class="search-icon"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Search passwords..."
+                class="search-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- New Group Form -->
+        <div id="newGroupForm" class="card new-group-form hidden">
+          <div class="card-header">
+            <h3>Create New Group</h3>
+          </div>
+          <div class="card-content">
+            <div class="form-group">
+              <label for="groupNameInput">Group Name</label>
+              <input
+                type="text"
+                id="groupNameInput"
+                placeholder="e.g., Work Accounts, Social Media, Banking..."
+                class="form-input"
+              />
+            </div>
+            <div class="form-actions">
+              <button id="addGroupBtn" class="btn btn-success">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                Create Group
+              </button>
+              <button id="cancelGroupBtn" class="btn btn-secondary">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+          <div id="groupsContainer" class="groups-grid">
+            <!-- Groups will be dynamically added here -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="empty-state">
+            <svg
+              class="empty-icon"
+              width="80"
+              height="80"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <path
+                d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+              />
+            </svg>
+            <h3>No Groups Yet</h3>
+            <p>
+              Create your first group to start organizing your passwords
+              securely.
+            </p>
+            <button
+              class="btn btn-primary"
+              onclick="document.getElementById('showGroupForm').click()"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              Create First Group
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Password Details -->
+    <div id="passwordModal" class="modal hidden">
+      <div
+        class="modal-backdrop"
+        onclick="passwordManager.closePasswordModal()"
+      ></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Password Details</h3>
+          <button
+            class="modal-close"
+            onclick="passwordManager.closePasswordModal()"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Content will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+      <div class="toast-content">
+        <svg
+          class="toast-icon"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+        <span id="toastMessage"></span>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
