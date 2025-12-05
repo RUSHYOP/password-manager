@@ -1,0 +1,39 @@
+/* SecureVault Browser Extension - Content Script Styles */
+
+.securevault-indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #8b5cf6;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.securevault-indicator:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.securevault-indicator svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .securevault-indicator {
+    background: rgba(30, 30, 45, 0.95);
+    color: #a78bfa;
+  }
+}

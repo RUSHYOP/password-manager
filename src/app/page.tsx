@@ -1,19 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Sidebar, Header } from '@/components/layout';
 import { GroupList, GroupForm } from '@/components/groups';
 import { PasswordList, PasswordForm } from '@/components/passwords';
+import { LockScreen } from '@/components/auth';
 import { usePasswordStore } from '@/store/password-store';
-import { useKeyboardShortcuts } from '@/hooks';
+import { useAuthStore } from '@/store/auth-store';
+import { useKeyboardShortcuts, useAutoLock } from '@/hooks';
 
 export default function Home() {
-  const { groups, selectedGroupId, theme, setTheme, importData, exportData } = usePasswordStore();
+  const { groups, selectedGroupId, theme, setTheme, importData, exportData, loadFromVault, clearAllData } = usePasswordStore();
+  const { isVaultCreated, isUnlocked, createVault, unlockVault, lockVault, resetVault } = useAuthStore();
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-lock on inactivity
+  useAutoLock();
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId);
 
@@ -29,18 +35,62 @@ export default function Home() {
     }
   }, [theme, mounted]);
 
+  // Handle vault creation
+  const handleCreateVault = useCallback(async (password: string): Promise<boolean> => {
+    try {
+      await createVault(password);
+      toast.success('Vault created successfully');
+      return true;
+    } catch {
+      toast.error('Failed to create vault');
+      return false;
+    }
+  }, [createVault]);
+
+  // Handle vault unlock
+  const handleUnlockVault = useCallback(async (password: string): Promise<boolean> => {
+    try {
+      const data = await unlockVault(password);
+      if (data) {
+        loadFromVault(data);
+        toast.success('Vault unlocked');
+        return true;
+      }
+      return false;
+    } catch {
+      toast.error('Failed to unlock vault');
+      return false;
+    }
+  }, [unlockVault, loadFromVault]);
+
+  // Handle vault reset
+  const handleResetVault = useCallback(() => {
+    if (window.confirm('Are you sure you want to reset your vault? This will delete ALL your passwords permanently.')) {
+      resetVault();
+      clearAllData();
+      toast.success('Vault reset successfully');
+    }
+  }, [resetVault, clearAllData]);
+
+  // Handle lock
+  const handleLock = useCallback(() => {
+    lockVault();
+    clearAllData();
+    toast.success('Vault locked');
+  }, [lockVault, clearAllData]);
+
   // Keyboard shortcuts
   useKeyboardShortcuts([
     {
       key: 'n',
       ctrlKey: true,
-      action: () => setShowPasswordForm(true),
+      action: () => isUnlocked && setShowPasswordForm(true),
       description: 'New Password',
     },
     {
       key: 'g',
       ctrlKey: true,
-      action: () => setShowGroupForm(true),
+      action: () => isUnlocked && setShowGroupForm(true),
       description: 'New Group',
     },
     {
@@ -59,6 +109,12 @@ export default function Home() {
       ctrlKey: true,
       action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
       description: 'Toggle Theme',
+    },
+    {
+      key: 'l',
+      ctrlKey: true,
+      action: () => isUnlocked && handleLock(),
+      description: 'Lock Vault',
     },
     {
       key: 'Escape',
@@ -132,6 +188,17 @@ export default function Home() {
     );
   }
 
+  // Show lock screen if vault is not unlocked
+  if (!isUnlocked) {
+    return (
+      <LockScreen
+        mode={isVaultCreated ? 'unlock' : 'create'}
+        onUnlock={isVaultCreated ? handleUnlockVault : handleCreateVault}
+        onReset={isVaultCreated ? handleResetVault : undefined}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen bg-background">
       {/* Hidden file input for import */}
@@ -149,6 +216,7 @@ export default function Home() {
         onNewPassword={handleNewPassword}
         onImport={handleImport}
         onExport={handleExport}
+        onLock={handleLock}
       />
 
       {/* Main Content */}

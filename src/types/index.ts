@@ -1,5 +1,10 @@
 // Password Manager Types
 
+export interface PasswordHistoryEntry {
+  password: string;
+  changedAt: string;
+}
+
 export interface Password {
   id: string;
   groupId: string;
@@ -11,6 +16,13 @@ export interface Password {
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
+  // New fields for password history and expiry
+  passwordHistory?: PasswordHistoryEntry[];
+  expiresAt?: string; // ISO date string when password should be rotated
+  lastPasswordChange?: string; // ISO date string of last password change
+  // TOTP fields
+  totpSecret?: string; // Base32 encoded TOTP secret
+  totpIssuer?: string; // TOTP issuer name
 }
 
 export interface Group {
@@ -19,6 +31,17 @@ export interface Group {
   icon?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TOTPEntry {
+  id: string;
+  name: string;
+  issuer: string;
+  secret: string; // Base32 encoded
+  algorithm?: 'SHA1' | 'SHA256' | 'SHA512';
+  digits?: number; // Default 6
+  period?: number; // Default 30 seconds
+  createdAt: string;
 }
 
 export interface PasswordGeneratorOptions {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Eye,
   EyeOff,
@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +27,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { usePasswordStore } from '@/store/password-store';
-import { useClipboard, useBreachCheck, usePasswordStrength } from '@/hooks';
+import { useClipboard, useBreachCheck, usePasswordStrength, getPasswordIssues } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { Password } from '@/types';
 
@@ -38,7 +39,7 @@ interface PasswordCardProps {
 }
 
 export function PasswordCard({ password, onEdit, onDelete, viewMode = 'grid' }: PasswordCardProps) {
-  const { toggleFavorite, groups } = usePasswordStore();
+  const { toggleFavorite, groups, passwords } = usePasswordStore();
   const [showPassword, setShowPassword] = useState(false);
   const { copied: copiedUsername, copy: copyUsername } = useClipboard();
   const { copied: copiedPassword, copy: copyPassword } = useClipboard();
@@ -46,6 +47,12 @@ export function PasswordCard({ password, onEdit, onDelete, viewMode = 'grid' }: 
   const { strength } = usePasswordStrength(password.password);
 
   const group = groups.find(g => g.id === password.groupId);
+  
+  // Get password audit issues
+  const auditIssues = useMemo(
+    () => getPasswordIssues(password, passwords),
+    [password, passwords]
+  );
 
   const handleCopyUsername = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -102,6 +109,27 @@ export function PasswordCard({ password, onEdit, onDelete, viewMode = 'grid' }: 
                 <Badge variant="secondary" className="text-xs shrink-0">
                   {group.name}
                 </Badge>
+              )}
+              {/* Audit warning badge */}
+              {auditIssues.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="destructive" 
+                      className="text-xs shrink-0 flex items-center gap-1"
+                    >
+                      <AlertTriangle className="w-3 h-3" />
+                      {auditIssues.length}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <ul className="text-xs space-y-1">
+                      {auditIssues.map((issue, i) => (
+                        <li key={i}>• {issue}</li>
+                      ))}
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
             <p className="text-sm text-muted-foreground truncate">{password.username}</p>

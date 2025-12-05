@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Group, Password, SortOption, ViewMode } from '@/types';
+import { generateSecureId } from '@/lib/crypto';
+import { useAuthStore } from './auth-store';
 
 interface PasswordStore {
   // State
@@ -36,9 +38,23 @@ interface PasswordStore {
   importData: (data: { groups: Group[]; passwords: Password[] }) => void;
   exportData: () => { groups: Group[]; passwords: Password[] };
   clearAllData: () => void;
+  
+  // Vault sync
+  loadFromVault: (data: { groups: Group[]; passwords: Password[] }) => void;
+  saveToVault: () => Promise<void>;
 }
 
-const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+// Helper to save vault after state changes
+const saveVaultDebounced = (() => {
+  let timeoutId: NodeJS.Timeout | null = null;
+  return (get: () => PasswordStore) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(async () => {
+      const state = get();
+      await state.saveToVault();
+    }, 500);
+  };
+})();
 
 export const usePasswordStore = create<PasswordStore>()(
   persist(
@@ -56,12 +72,13 @@ export const usePasswordStore = create<PasswordStore>()(
       addGroup: (name) => {
         const now = new Date().toISOString();
         const newGroup: Group = {
-          id: generateId(),
+          id: generateSecureId(),
           name,
           createdAt: now,
           updatedAt: now,
         };
         set((state) => ({ groups: [...state.groups, newGroup] }));
+        saveVaultDebounced(get);
       },
       
       updateGroup: (id, name) => {
@@ -72,6 +89,7 @@ export const usePasswordStore = create<PasswordStore>()(
               : group
           ),
         }));
+        saveVaultDebounced(get);
       },
       
       deleteGroup: (id) => {
@@ -80,6 +98,7 @@ export const usePasswordStore = create<PasswordStore>()(
           passwords: state.passwords.filter((password) => password.groupId !== id),
           selectedGroupId: state.selectedGroupId === id ? null : state.selectedGroupId,
         }));
+        saveVaultDebounced(get);
       },
       
       selectGroup: (id) => {
@@ -91,27 +110,44 @@ export const usePasswordStore = create<PasswordStore>()(
         const now = new Date().toISOString();
         const newPassword: Password = {
           ...passwordData,
-          id: generateId(),
+          id: generateSecureId(),
           createdAt: now,
           updatedAt: now,
+          lastPasswordChange: now,
         };
         set((state) => ({ passwords: [...state.passwords, newPassword] }));
+        saveVaultDebounced(get);
       },
       
       updatePassword: (id, updates) => {
         set((state) => ({
-          passwords: state.passwords.map((password) =>
-            password.id === id
-              ? { ...password, ...updates, updatedAt: new Date().toISOString() }
-              : password
-          ),
+          passwords: state.passwords.map((pwd) => {
+            if (pwd.id !== id) return pwd;
+            
+            const now = new Date().toISOString();
+            const updated = { ...pwd, ...updates, updatedAt: now };
+            
+            // Track password history if password changed
+            if (updates.password && updates.password !== pwd.password) {
+              const history = pwd.passwordHistory || [];
+              updated.passwordHistory = [
+                ...history,
+                { password: pwd.password, changedAt: now }
+              ].slice(-10); // Keep last 10 passwords
+              updated.lastPasswordChange = now;
+            }
+            
+            return updated;
+          }),
         }));
+        saveVaultDebounced(get);
       },
       
       deletePassword: (id) => {
         set((state) => ({
           passwords: state.passwords.filter((password) => password.id !== id),
         }));
+        saveVaultDebounced(get);
       },
       
       toggleFavorite: (id) => {
@@ -122,6 +158,7 @@ export const usePasswordStore = create<PasswordStore>()(
               : password
           ),
         }));
+        saveVaultDebounced(get);
       },
       
       // UI Actions
@@ -151,6 +188,7 @@ export const usePasswordStore = create<PasswordStore>()(
           passwords: data.passwords,
           selectedGroupId: null,
         });
+        saveVaultDebounced(get);
       },
       
       exportData: () => {
@@ -168,13 +206,28 @@ export const usePasswordStore = create<PasswordStore>()(
           selectedGroupId: null,
           searchQuery: '',
         });
+        saveVaultDebounced(get);
+      },
+      
+      // Vault sync methods
+      loadFromVault: (data) => {
+        set({
+          groups: data.groups,
+          passwords: data.passwords,
+        });
+      },
+      
+      saveToVault: async () => {
+        const { groups, passwords } = get();
+        const authStore = useAuthStore.getState();
+        if (authStore.isUnlocked) {
+          await authStore.saveVault({ groups, passwords });
+        }
       },
     }),
     {
-      name: 'securevault-storage',
+      name: 'securevault-ui-settings',
       partialize: (state) => ({
-        groups: state.groups,
-        passwords: state.passwords,
         theme: state.theme,
         viewMode: state.viewMode,
         sortOption: state.sortOption,

@@ -3,3 +3,4 @@ export { PasswordForm } from './PasswordForm';
 export { PasswordGenerator } from './PasswordGenerator';
 export { PasswordStrengthMeter } from './PasswordStrengthMeter';
 export { PasswordList } from './PasswordList';
+export { TOTPDisplay, TOTPSetupDialog } from './TOTPDisplay';

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LayoutGrid,
   List,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -27,6 +28,7 @@ interface SidebarProps {
   onNewPassword: () => void;
   onImport: () => void;
   onExport: () => void;
+  onLock?: () => void;
 }
 
 function GroupItem({ 
@@ -78,7 +80,7 @@ function GroupItem({
   );
 }
 
-export function Sidebar({ onNewGroup, onNewPassword, onImport, onExport }: SidebarProps) {
+export function Sidebar({ onNewGroup, onNewPassword, onImport, onExport, onLock }: SidebarProps) {
   const { groups, selectedGroupId, selectGroup, theme, setTheme, viewMode, setViewMode, clearAllData } = usePasswordStore();
   const stats = useStats();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -263,6 +265,21 @@ export function Sidebar({ onNewGroup, onNewPassword, onImport, onExport }: Sideb
                   {showClearConfirm ? 'Click again to confirm' : 'Clear All Data'}
                 </TooltipContent>
               </Tooltip>
+              {onLock && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={onLock}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-white/10 text-amber-500 hover:text-amber-400"
+                    >
+                      <Lock className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Lock Vault (Ctrl+L)</TooltipContent>
+                </Tooltip>
+              )}
             </div>
             
             <div className="flex gap-1">
